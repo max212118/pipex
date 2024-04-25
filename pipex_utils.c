@@ -6,7 +6,7 @@
 /*   By: mtarnaud <mtarnaud@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/17 19:33:28 by mtarnaud          #+#    #+#             */
-/*   Updated: 2024/04/17 20:19:36 by mtarnaud         ###   ########.fr       */
+/*   Updated: 2024/04/24 18:11:14 by mtarnaud         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,23 +46,10 @@ char	**find_paths(char **env)
 	while (env[i])
 	{
 		if (strncmp(env[i], "PATH=", 5) == 0)
-			break ;
+			return (ft_split(env[i] + 5, ':'));
 		i++;
 	}
-	return (ft_split(env[i] + 5, ':'));
-}
-
-void	free_pipex(t_pipex	*pipex)
-{
-	int	i;
-
-	i = 0;
-	while (pipex->cmds[i])
-	{
-		free(pipex->cmds[i]);
-		i++;
-	}
-	free(pipex->cmds);
+	return (NULL);
 }
 
 void	set_commands(int ac, char **av, t_pipex *pipex)
@@ -74,7 +61,7 @@ void	set_commands(int ac, char **av, t_pipex *pipex)
 	j = 2;
 	pipex->cmds = malloc(sizeof(char **) * (ac - 2));
 	if (!pipex->cmds)
-		exit (1);
+		(free_pipex(pipex), exit (EXIT_FAILURE));
 	pipex->cmds[ac - 3] = NULL;
 	while (j < ac - 1)
 	{
@@ -82,7 +69,7 @@ void	set_commands(int ac, char **av, t_pipex *pipex)
 		if (!pipex->cmds[i])
 		{
 			free_pipex(pipex);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		i++;
 		j++;
@@ -95,10 +82,14 @@ char	*test_paths(t_pipex	*pipex, int index_cmd)
 	char	*command;
 
 	i = 0;
+	if (access(pipex->cmds[index_cmd][0], F_OK | X_OK) == 0)
+		return (pipex->cmds[index_cmd][0]);
 	while (pipex->paths[i])
 	{
 		command = ft_strjoin_three(pipex->paths[i], "/",
 				pipex->cmds[index_cmd][0]);
+		if (!command)
+			(free_pipex(pipex), exit(3));
 		if (access(command, F_OK | X_OK) == 0)
 			return (command);
 		i++;
